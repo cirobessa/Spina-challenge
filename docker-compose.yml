@@ -1,0 +1,41 @@
+#version: '3.8'
+
+services:
+  spina:
+    build: .
+    command: bundle exec rails server -b 0.0.0.0
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      dbpg:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@dbpg:5432/spina_development
+      - RAILS_ENV=development
+        #- DATABASE_HOST=dbpg
+        #- POSTGRES_USER=postgres
+        #- POSTGRES_PASSWORD=password
+        #- POSTGRES_DB=spina_development
+
+  dbpg:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: spina_development
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+      timeout: 5s
+
+volumes:
+  pgdata:
+
+
