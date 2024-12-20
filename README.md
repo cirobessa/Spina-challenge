@@ -1,6 +1,6 @@
 <img src="https://spinacms.com/spinacms.png" alt="Spina CMS" width="225"/>
 
-[Spina CMS](https://spinacms.com) DEMO Challenge with Docker-compose
+[Spina CMS](https://spinacms.com) DEMO deploy challenge with Docker-compose
 
 [![Ruby](https://github.com/SpinaCMS/Spina/actions/workflows/ruby.yml/badge.svg)](https://github.com/SpinaCMS/Spina/actions/workflows/ruby.yml)
 [![Code Climate](https://codeclimate.com/github/SpinaCMS/Spina/badges/gpa.svg)](https://codeclimate.com/github/SpinaCMS/Spina)
