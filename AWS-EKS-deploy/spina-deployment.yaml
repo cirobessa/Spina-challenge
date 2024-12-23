@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spina
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: spina
+  template:
+    metadata:
+      labels:
+        app: spina
+    spec:
+      serviceAccountName: spina-service-account
+      containers:
+        - name: spina
+          image: "${ECR_IMAGE_URI}"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              value: "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}"
+
+
