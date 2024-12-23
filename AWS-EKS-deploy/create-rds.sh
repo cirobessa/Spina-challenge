@@ -16,7 +16,7 @@ aws rds create-db-instance \
   --db-instance-class "$DB_INSTANCE_CLASS" \
   --engine postgres \
   --master-username "$MASTER_USERNAME" \
-  --master-user-password "pqQHpwHyRG4QkeFL" \
+  --master-user-password "$MASTER_PASSWORD" \
   --allocated-storage "$ALLOCATED_STORAGE" \
   --no-publicly-accessible \
   --region "$REGION"
