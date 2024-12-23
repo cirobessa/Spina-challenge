@@ -3,7 +3,9 @@
 
 ## Requirements ==>   EKS ready cluster and this commands already set: AWS CLI, kubectl, eksctl, openssl, docker, helm, envsubst
 
-### BUILD SPINA APP
+## SET kubeConfig
+aws eks update-kubeconfig --region us-east-1 --name $(aws eks list-clusters --region us-east-1 --query 'clusters[0]' --output text)
+
 
 # Set variables
 REPOSITORY_NAME="spina"
@@ -33,13 +35,14 @@ export DB_HOST=$(aws rds describe-db-instances \
   --output text)
 export DB_NAME=dbpg
 export DB_USER=masteruser
-export DB_PASSWORD=pqQHpwHyRG4QkeFL
+export DB_PASSWORD=$DB_PASS
 
 
 ## POSTGRES
 bash  create-rds.sh
 
 #################################################
+### BUILD SPINA APP
 cd ..
 # Create ECR repo
 aws ecr create-repository --repository-name "${REPOSITORY_NAME}" --region "${AWS_REGION}"
@@ -55,11 +58,9 @@ docker push "${ECR_REPOSITORY_URI}:${IMAGE_TAG}"
 cd -
 #########################################################################
 
-## SET kubeConfig
-aws eks update-kubeconfig --region us-east-1 --name $(aws eks list-clusters --region us-east-1 --query 'clusters[0]' --output text)
 
 # Associate IAM OIDC provider with the EKS cluster to enable IAM roles for service accounts
-eksctl utils associate-iam-oidc-provider  --region $REGION  --cluster $CLUSTER_NAME  --approve
+eksctl utils associate-iam-oidc-provider  --region $AWS_REGION  --cluster $CLUSTER_NAME  --approve
 
 # download policy and create user for the AWS ALB
 curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.7.2/docs/install/iam_policy.json
