@@ -34,3 +34,5 @@ Then access in your Browser, using the credentials created in the last configura
 
 
 Spina is ready and running in Docker!!
+
+There is also a folder /AWS-EKS-deploy  with instructions to deploy in AWS using EKS.
