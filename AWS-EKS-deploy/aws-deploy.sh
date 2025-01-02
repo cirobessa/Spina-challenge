@@ -1,11 +1,13 @@
 
 
 
-## Requirements ==>   EKS ready cluster and this commands already set: AWS CLI, kubectl, eksctl, openssl, docker, helm, envsubst
+## Requirements ==>   EKS ready cluster and this commands already set: AWS CLI, AWS RDS, kubectl, eksctl, openssl, docker, helm, envsubst
+
+## POSTGRES
+bash  create-rds.sh
 
 ## SET kubeConfig
 aws eks update-kubeconfig --region us-east-1 --name $(aws eks list-clusters --region us-east-1 --query 'clusters[0]' --output text)
-
 
 # Set variables
 REPOSITORY_NAME="spina"
@@ -21,11 +23,7 @@ POLICY_NAME="AWSLoadBalancerControllerIAMPolicy"
 POLICY_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/${POLICY_NAME}"
 SERVICE_ACCOUNT_NAME="aws-load-balancer-controller"
 NAMESPACE="kube-system"
-export ECR_IMAGE_URI=$(aws ecr describe-images \
-  --repository-name spina \
-  --region us-east-1 \
-  --query 'sort_by(imageDetails, &imagePushedAt)[-1].imageTags[0]' \
-  --output text)
+export ECR_IMAGE_URI
 
 export DB_INSTANCE_IDENTIFIER=dbpg
 export DB_HOST=$(aws rds describe-db-instances \
@@ -35,11 +33,10 @@ export DB_HOST=$(aws rds describe-db-instances \
   --output text)
 export DB_NAME=dbpg
 export DB_USER=masteruser
-export DB_PASSWORD=$DB_PASS
+DB_PASSWORD=$(cat /tmp/pgdb.txt)
+export DB_PASSWORD
 
 
-## POSTGRES
-bash  create-rds.sh
 
 #################################################
 ### BUILD SPINA APP
@@ -64,11 +61,19 @@ eksctl utils associate-iam-oidc-provider  --region $AWS_REGION  --cluster $CLUST
 
 # download policy and create user for the AWS ALB
 curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.7.2/docs/install/iam_policy.json
+
+# fix policy add rigth
+jq '.Statement[1].Action += ["elasticloadbalancing:DescribeListenerAttributes"]' iam_policy.json > updated_iam_policy.json
+mv updated_iam_policy.json iam_policy.json
+
 aws iam create-policy --policy-name $POLICY_NAME --policy-document file://iam_policy.json
 
 # Create the IAM service account for the AWS Load Balancer Controller
 eksctl create iamserviceaccount --cluster $CLUSTER_NAME --namespace $NAMESPACE --name $SERVICE_ACCOUNT_NAME \
   --attach-policy-arn $POLICY_ARN --approve
+
+## tag subnets to be used in loadbalancer
+bash tag-subnet.sh
 
 # Add the EKS Helm chart repository
 helm repo add eks https://aws.github.io/eks-charts
@@ -113,12 +118,23 @@ eksctl create iamserviceaccount \
   --approve
 
 
+# fix not running ALB
+helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller   --namespace kube-system   --set clusterName=cirobessa-eks-MEeNNFNj   --set serviceAccount.create=false   --set serviceAccount.name=aws-load-balancer-controller   --set region=us-east-1   --set vpcId=$(aws ec2 describe-vpcs --filters 'Name=tag:Name,Values=cirobessa-vpc' --query 'Vpcs[0].VpcId' --output text)
+
+
 ## SPINA Deployment
 envsubst < spina-deployment.yaml | kubectl apply -f -
 
 ### SPINA CONFIG
 POD_NAME=$(kubectl get pod -l app=spina -o jsonpath='{.items[0].metadata.name}')
-kubectl exec -it $POD_NAME -- rails db:create
-kubectl exec -it $POD_NAME -- rails db:migrate
+kubectl exec -it $POD_NAME -c spina -- rails db:create
+kubectl exec -it $POD_NAME -c spina  -- rails db:migrate
 
+echo "The apps endpoint is:"
+ kubectl get ingress spina-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+
+ echo " 
+ Spina install "
+
+kubectl exec -it $POD_NAME -c spina  --  bundle exec rails g spina:install
 
