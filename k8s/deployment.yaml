@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spina-challenge
+  labels:
+    app: spina-challenge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spina-challenge
+  template:
+    metadata:
+      labels:
+        app: spina-challenge
+    spec:
+      containers:
+        - name: rails-app
+          image: cirobessa/spina-challenge:latest  # Crie e suba a imagem
+          ports:
+            - containerPort: 3000
+          env:
+            - name: RAILS_ENV
+              value: "production"
+            # Adicione variáveis sensíveis via secret ou configmap
