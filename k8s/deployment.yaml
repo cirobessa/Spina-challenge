@@ -16,10 +16,10 @@ spec:
     spec:
       containers:
         - name: rails-app
-          image: cirobessa/spina-challenge:latest  # Crie e suba a imagem
+          image: cirobessa/spina-challenge:latest  
           ports:
             - containerPort: 3000
           env:
             - name: RAILS_ENV
               value: "production"
-            # Adicione variáveis sensíveis via secret ou configmap
+          
