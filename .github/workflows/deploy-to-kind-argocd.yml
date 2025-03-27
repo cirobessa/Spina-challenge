@@ -3,7 +3,7 @@ name: Build & Deploy to ArgoCD/Kind
 on:
   push:
     branches:
-      - main
+      - dev
 
 jobs:
   build-and-push:
